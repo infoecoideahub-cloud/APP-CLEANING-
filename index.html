@@ -158,9 +158,32 @@ html,body{height:100%;background:var(--bg3);font-family:-apple-system,BlinkMacSy
 .mn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0;cursor:pointer;color:var(--text3);background:none;border:none;font-size:10px}
 .mn.active{color:var(--green)}
 .mn i{font-size:20px}
+
+.pw-screen{position:fixed;inset:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;z-index:9999}
+.pw-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:36px 32px;width:100%;max-width:360px;text-align:center}
+.pw-logo{width:52px;height:52px;border-radius:14px;background:var(--green);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.pw-logo i{font-size:26px;color:#fff}
+.pw-title{font-size:20px;font-weight:600;margin-bottom:4px}
+.pw-sub{font-size:13px;color:var(--text2);margin-bottom:24px}
+.pw-input{width:100%;border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;font-size:15px;background:var(--bg);color:var(--text);text-align:center;letter-spacing:2px;margin-bottom:10px}
+.pw-input:focus{outline:none;border-color:var(--green)}
+.pw-btn{width:100%;background:var(--green);border:none;border-radius:var(--r);padding:12px;font-size:15px;font-weight:500;color:#fff;cursor:pointer;margin-bottom:8px}
+.pw-btn:hover{background:var(--green-dk)}
+.pw-err{color:var(--red);font-size:13px;min-height:18px}
 </style>
 </head>
 <body>
+<div class="pw-screen" id="pw-screen">
+  <div class="pw-card">
+    <div class="pw-logo"><i class="ti ti-sparkles"></i></div>
+    <div class="pw-title">Glow &amp; Go CRM</div>
+    <div class="pw-sub">Enter password to continue</div>
+    <input class="pw-input" id="pw-input" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkPw()">
+    <button class="pw-btn" onclick="checkPw()">Enter</button>
+    <div class="pw-err" id="pw-err"></div>
+  </div>
+</div>
+
 <div class="layout">
   <aside class="sidebar">
     <div class="sb-logo">
@@ -878,7 +901,34 @@ function closeExpense(){document.getElementById('ov-expense').classList.remove('
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-load();renderJobs();
+
+const PW_HASH = '4b237582da7873f17c6ced043be620c2ce501b9899a5ae872fd2fdc2039b78aa';
+async function hashPw(pw){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function checkPw(){
+  const val=document.getElementById('pw-input').value;
+  const h=await hashPw(val);
+  if(h===PW_HASH){
+    sessionStorage.setItem('gg_auth','1');
+    document.getElementById('pw-screen').style.display='none';
+  } else {
+    document.getElementById('pw-err').textContent='Wrong password';
+    document.getElementById('pw-input').value='';
+    document.getElementById('pw-input').focus();
+    setTimeout(()=>document.getElementById('pw-err').textContent='',2000);
+  }
+}
+function initAuth(){
+  if(sessionStorage.getItem('gg_auth')==='1'){
+    document.getElementById('pw-screen').style.display='none';
+  } else {
+    setTimeout(()=>document.getElementById('pw-input').focus(),100);
+  }
+}
+
+load();renderJobs();initAuth();
 </script>
 </body>
 </html>
